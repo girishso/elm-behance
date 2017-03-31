@@ -1,11 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Elm App</title>
+  <!-- Standard Meta -->
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <!-- Site Properities -->
+  <title>Semantic-Org/Semantic-UI</title>
+  <link rel="stylesheet" rel="stylesheet" type="text/css" href="./dist/semantic.min.css">
+  <link rel="stylesheet" type="text/css" href="css/main.css">
 </head>
-<body>
-    <div id="root"></div>
+
+<body class="pushable">
+  <div class="ui fixed inverted menu">
+    <div class="ui container">
+      <a href="#" class="header item" rel="noreferrer">
+        Pint Town
+      </a>
+      <a href="#" class="item" rel="noreferrer">Home</a>
+      <div class="ui simple dropdown item">
+        Discover <i class="dropdown icon"></i>
+        <div class="menu inverted">
+          <a class="item" href="#" rel="noreferrer"><i class="safari icon"></i>Search & Explore</a>
+          <a class="item" href="#" rel="noreferrer"><i class="slideshare icon"></i>Curated Galleries</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Page Contents -->
+  <div class="pusher">
+    <div id="root" class="ui vertical stripe segment">
+
+      </div>
+    </div>
+  </div>
 </body>
+
 </html>

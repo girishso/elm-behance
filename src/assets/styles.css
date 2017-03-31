@@ -1,0 +1,44 @@
+.main {
+    margin-top: 4em !important;
+}
+
+.sb {
+    min-height: 100%;
+}
+
+small {
+    color: #aaa;
+}
+
+.load {
+    margin-top: 4em !important;
+    padding: 1em !important;
+        height: 150px;
+}
+
+ul#fields {
+    list-style-type: none;
+    padding: 0;
+}
+
+ul#fields  li { display: inline; padding-right: 2px; }
+ul#fields  li + li:before {
+    content: ", ";
+}
+
+.home-main {
+  margin-top: 4em !important;
+}
+
+.card {
+  cursor: auto !important;
+}
+
+@media only screen and (max-width: 768px) {
+  /* For mobile phones: */
+  .ui.grid>* {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+}
