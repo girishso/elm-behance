@@ -2,6 +2,7 @@ module App exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Decoders exposing (..)
 
 
 type alias Model =
