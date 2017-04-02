@@ -2,7 +2,7 @@ module Decoders exposing (..)
 
 import Json.Decode as D exposing (..)
 import Dict
-import Json.Decode.Pipeline exposing (decode, required)
+import Json.Decode.Pipeline exposing (decode, required, optional)
 
 
 type alias BPrj =
@@ -20,6 +20,13 @@ type alias BPrjProjectStats =
     { views : Int
     , appreciations : Int
     , comments : Int
+    }
+
+
+type alias BPrjProjectModule =
+    { type_ : String
+    , src : String
+    , text_plain : String
     }
 
 
@@ -43,6 +50,7 @@ initial_BPrjProject =
     , description = ""
     , editor_version = 0
     , allow_comments = 0
+    , modules = []
     , short_url = ""
     , creator_id = 0
     }
@@ -70,7 +78,7 @@ type alias BPrjProject =
     , editor_version : Int
     , allow_comments :
         Int
-        -- , modules : bprj_project_modules
+    , modules : List BPrjProjectModule
     , short_url :
         String
         -- , copyright : BPrjProjectCopyright
@@ -133,8 +141,17 @@ decodeBPrjProject =
         |> required "description" (D.string)
         |> required "editor_version" (D.int)
         |> required "allow_comments" (D.int)
+        |> required "modules" (D.list decodeBPrjProjectModule)
         |> required "short_url" (D.string)
         |> required "creator_id" (D.int)
+
+
+decodeBPrjProjectModule : D.Decoder BPrjProjectModule
+decodeBPrjProjectModule =
+    decode BPrjProjectModule
+        |> required "type" (D.string)
+        |> optional "src" (D.string) "MISSING"
+        |> optional "text_plain" (D.string) "MISSING"
 
 
 

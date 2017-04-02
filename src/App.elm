@@ -34,7 +34,7 @@ type Msg
 
 fetchProject : Cmd Msg
 fetchProject =
-    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/49012273?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeBPrj
+    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeBPrj
         |> RemoteData.sendRequest
         |> Cmd.map OnFetchProject
 
@@ -56,7 +56,7 @@ view model =
             div [ class "ui middle aligned stackable grid container" ]
                 [ div [ class "row main" ]
                     [ div [ class "eleven wide column" ]
-                        (render_modules model)
+                        (render_modules prj.project.modules)
                     , div [ class "five wide column sb" ]
                         (side_bar prj)
                     ]
@@ -79,23 +79,35 @@ subscriptions model =
     Sub.none
 
 
-render_modules : Model -> List (Html Msg)
-render_modules model =
-    [ div [ class "ui segment" ]
-        [ div [ class "ui fluid" ]
-            [ img [ class "ui fluid image", src "./images/1.jpg" ]
-                []
-            ]
-        , div [ class "ui divider" ]
-            []
-        , div []
-            [ img [ class "ui fluid image", src "./images/2.jpg" ]
-                []
-            ]
-        , div [ class "ui divider" ]
-            []
+render_modules : List BPrjProjectModule -> List (Html Msg)
+render_modules modules =
+    let
+        modules_html =
+            modules
+                |> List.filter (\m -> m.type_ == "image" || m.type_ == "text")
+                |> List.map
+                    (\m ->
+                        div []
+                            [ div [ class "ui fluid" ]
+                                [ case m.type_ of
+                                    "image" ->
+                                        img [ class "ui fluid image", src m.src ]
+                                            []
+
+                                    "text" ->
+                                        text m.text_plain
+
+                                    _ ->
+                                        text ""
+                                ]
+                            , div [ class "ui divider" ]
+                                []
+                            ]
+                    )
+    in
+        [ div [ class "ui segment" ]
+            (modules_html)
         ]
-    ]
 
 
 comments : Model -> List (Html Msg)
