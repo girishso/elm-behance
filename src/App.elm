@@ -3,11 +3,19 @@ module App exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Decoders exposing (..)
+import RemoteData exposing (..)
+import Http exposing (..)
+import Time.DateTime as DateTime exposing (DateTime, dateTime, fromTimestamp)
+import Dict
+
+
+type Data
+    = CurrentProject BPrj
+    | ProjectsList (List BPrj)
 
 
 type alias Model =
-    { message : String
-    , logo : String
+    { data : Data
     }
 
 
@@ -17,36 +25,53 @@ type alias Project =
 
 init : String -> ( Model, Cmd Msg )
 init path =
-    ( { message = "Your Elm App is working!", logo = path }, Cmd.none )
+    ( { data = CurrentProject (initialBPrj) }, fetchProject )
 
 
 type Msg
-    = NoOp
+    = OnFetchProject (WebData BPrj)
+
+
+fetchProject : Cmd Msg
+fetchProject =
+    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/49012273?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeBPrj
+        |> RemoteData.sendRequest
+        |> Cmd.map OnFetchProject
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case Debug.log "updatE" msg of
+        OnFetchProject (Success response) ->
+            ( { model | data = CurrentProject response }, Cmd.none )
+
+        OnFetchProject _ ->
+            ( model, Cmd.none )
 
 
 view : Model -> Html Msg
 view model =
-    div [ class "ui middle aligned stackable grid container" ]
-        [ div [ class "row main" ]
-            [ div [ class "eleven wide column" ]
-                (render_modules model)
-            , div [ class "five wide column sb" ]
-                (side_bar model)
-            ]
-        , div [ class "row" ]
-            [ h4 [ class "ui horizontal divider header" ]
-                [ i [ class "thumb circular up icon" ]
-                    []
+    case model.data of
+        CurrentProject prj ->
+            div [ class "ui middle aligned stackable grid container" ]
+                [ div [ class "row main" ]
+                    [ div [ class "eleven wide column" ]
+                        (render_modules model)
+                    , div [ class "five wide column sb" ]
+                        (side_bar prj)
+                    ]
+                , div [ class "row" ]
+                    [ h4 [ class "ui horizontal divider header" ]
+                        [ i [ class "thumb circular up icon" ]
+                            []
+                        ]
+                    ]
+                , div [ class "row" ]
+                    (comments model)
                 ]
-            ]
-        , div [ class "row" ]
-            (comments model)
-        ]
+
+        ProjectsList prj_list ->
+            h1 [] [ text "prj_list" ]
 
 
 subscriptions : Model -> Sub Msg
@@ -130,41 +155,62 @@ comments model =
     ]
 
 
-side_bar : Model -> List (Html Msg)
-side_bar model =
-    [ div [ class "ui segment" ]
-        [ div [ class "ui cards" ]
-            [ div [ class "card" ]
-                [ div [ class "content" ]
-                    [ img [ class "right floated mini ui image", src "images/jenny.jpg" ]
-                        []
-                    , div [ class "header" ]
-                        [ text "Jenny Hess              " ]
-                    , div [ class "meta" ]
-                        [ text "New Member              " ]
-                    , div [ class "description" ]
-                        [ text "Jenny wants to add you to the group "
-                        , b []
-                            [ text "best friends" ]
+side_bar : BPrj -> List (Html Msg)
+side_bar prj =
+    let
+        owner =
+            case List.head prj.project.owners of
+                Just a ->
+                    a
+
+                Nothing ->
+                    { location = "", display_name = "", images = Dict.empty }
+
+        owner_img =
+            case Dict.get "50" owner.images of
+                Just a ->
+                    a
+
+                Nothing ->
+                    ""
+    in
+        [ div [ class "ui segment" ]
+            [ div [ class "ui cards" ]
+                [ div [ class "card" ]
+                    [ div [ class "content" ]
+                        [ img [ class "right floated mini ui image", src owner_img ]
+                            []
+                        , div [ class "header" ]
+                            [ text owner.display_name ]
+                        , div [ class "meta" ]
+                            [ text owner.location ]
+                        ]
+                    , div [ class "extra content" ]
+                        [ div [ class "ui blue button" ]
+                            [ text "Follow" ]
                         ]
                     ]
-                , div [ class "extra content" ]
-                    [ div [ class "ui blue button" ]
-                        [ text "Follow" ]
-                    ]
                 ]
-            ]
-        , div [ class "ui divider" ]
-            []
-        , div [ class "ui segment" ]
-            [ h2 []
-                [ text "Janish Soft" ]
-            , p []
-                [ text "Branding Architecture Graphic Design" ]
-            , p [ class "grey" ]
-                [ small []
-                    [ text "Published: March 2, 2017" ]
+            , div [ class "ui divider" ]
+                []
+            , div [ class "ui segment" ]
+                [ h3 []
+                    [ text prj.project.name ]
+                , ul [ id "fields" ]
+                    (List.map (\f -> li [] [ text f ]) prj.project.fields)
+                , p [ class "grey" ]
+                    [ small []
+                        [ "Published: "
+                            ++ (format_date prj.project.published_on)
+                            |> text
+                        ]
+                    ]
                 ]
             ]
         ]
-    ]
+
+
+format_date : Int -> String
+format_date dt =
+    fromTimestamp (toFloat dt * 1000)
+        |> DateTime.toISO8601
