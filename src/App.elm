@@ -10,17 +10,13 @@ import Dict
 
 
 type Data
-    = CurrentProject BPrj
-    | ProjectsList (List BPrj)
+    = CurrentProject Behance
+    | ProjectsList (List Behance)
 
 
 type alias Model =
     { data : Data
     }
-
-
-type alias Project =
-    {}
 
 
 init : String -> ( Model, Cmd Msg )
@@ -29,7 +25,7 @@ init path =
 
 
 type Msg
-    = OnFetchProject (WebData BPrj)
+    = OnFetchProject (WebData Behance)
 
 
 fetchProject : Cmd Msg
@@ -79,7 +75,7 @@ subscriptions model =
     Sub.none
 
 
-render_modules : List BPrjProjectModule -> List (Html Msg)
+render_modules : List ProjectModule -> List (Html Msg)
 render_modules modules =
     let
         modules_html =
@@ -167,7 +163,7 @@ comments model =
     ]
 
 
-side_bar : BPrj -> List (Html Msg)
+side_bar : Behance -> List (Html Msg)
 side_bar prj =
     let
         owner =

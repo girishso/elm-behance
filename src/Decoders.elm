@@ -5,13 +5,13 @@ import Dict
 import Json.Decode.Pipeline exposing (decode, required, optional)
 
 
-type alias BPrj =
-    { project : BPrjProject
+type alias Behance =
+    { project : Project
     , http_code : Int
     }
 
 
-initialBPrj : BPrj
+initialBPrj : Behance
 initialBPrj =
     { http_code = 0, project = initial_BPrjProject }
 
@@ -23,14 +23,14 @@ type alias BPrjProjectStats =
     }
 
 
-type alias BPrjProjectModule =
+type alias ProjectModule =
     { type_ : String
     , src : String
     , text_plain : String
     }
 
 
-initial_BPrjProject : BPrjProject
+initial_BPrjProject : Project
 initial_BPrjProject =
     { id = 0
     , name = ""
@@ -56,7 +56,7 @@ initial_BPrjProject =
     }
 
 
-type alias BPrjProject =
+type alias Project =
     { id : Int
     , name : String
     , published_on : Int
@@ -78,7 +78,7 @@ type alias BPrjProject =
     , editor_version : Int
     , allow_comments :
         Int
-    , modules : List BPrjProjectModule
+    , modules : List ProjectModule
     , short_url :
         String
         -- , copyright : BPrjProjectCopyright
@@ -105,9 +105,9 @@ decodeBPrjProjectOwner =
         |> required "display_name" (D.string)
 
 
-decodeBPrj : D.Decoder BPrj
+decodeBPrj : D.Decoder Behance
 decodeBPrj =
-    decode BPrj
+    decode Behance
         |> required "project" (decodeBPrjProject)
         |> required "http_code" (D.int)
 
@@ -120,9 +120,9 @@ decodeBPrjProjectStats =
         |> required "comments" (D.int)
 
 
-decodeBPrjProject : D.Decoder BPrjProject
+decodeBPrjProject : D.Decoder Project
 decodeBPrjProject =
-    decode BPrjProject
+    decode Project
         |> required "id" (D.int)
         |> required "name" (D.string)
         |> required "published_on" (D.int)
@@ -146,9 +146,9 @@ decodeBPrjProject =
         |> required "creator_id" (D.int)
 
 
-decodeBPrjProjectModule : D.Decoder BPrjProjectModule
+decodeBPrjProjectModule : D.Decoder ProjectModule
 decodeBPrjProjectModule =
-    decode BPrjProjectModule
+    decode ProjectModule
         |> required "type" (D.string)
         |> optional "src" (D.string) "MISSING"
         |> optional "text_plain" (D.string) "MISSING"
