@@ -9,6 +9,10 @@ import Time.DateTime as DateTime exposing (DateTime, dateTime, fromTimestamp)
 import Dict
 
 
+type alias ProjectPage =
+    { current_project : Behance, commets : List Comment }
+
+
 type Data
     = CurrentProject Behance
     | ProjectsList (List Behance)
@@ -21,11 +25,19 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init path =
-    ( { data = CurrentProject (initialBPrj) }, fetchProject )
+    ( { data = CurrentProject (initialBPrj) }, Cmd.batch [ fetchProject, fetchComments ] )
 
 
 type Msg
     = OnFetchProject (WebData Behance)
+    | HandleComments (WebData Comments)
+
+
+fetchComments : Cmd Msg
+fetchComments =
+    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeComments
+        |> RemoteData.sendRequest
+        |> Cmd.map HandleComments
 
 
 fetchProject : Cmd Msg
@@ -42,6 +54,13 @@ update msg model =
             ( { model | data = CurrentProject response }, Cmd.none )
 
         OnFetchProject _ ->
+            ( model, Cmd.none )
+
+        HandleComments (Success response) ->
+            -- ({model | data =})
+            ( model, Cmd.none )
+
+        HandleComments _ ->
             ( model, Cmd.none )
 
 

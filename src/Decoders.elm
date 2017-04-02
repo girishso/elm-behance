@@ -16,6 +16,45 @@ initialBPrj =
     { http_code = 0, project = initial_BPrjProject }
 
 
+type alias Comment =
+    { comment : String
+    , created_on : Int
+    , user : CommentUser
+    }
+
+
+type alias Comments =
+    { comments : List Comment
+    }
+
+
+type alias CommentUser =
+    { display_name : String
+    , images : Dict.Dict String String
+    }
+
+
+decodeComments : D.Decoder Comments
+decodeComments =
+    decode Comments
+        |> required "comments" (D.list decodeComment)
+
+
+decodeComment : D.Decoder Comment
+decodeComment =
+    decode Comment
+        |> required "comment" (D.string)
+        |> required "created_on" (D.int)
+        |> required "user" (decodeCommentUser)
+
+
+decodeCommentUser : D.Decoder CommentUser
+decodeCommentUser =
+    decode CommentUser
+        |> required "display_name" (D.string)
+        |> required "images" (D.dict string)
+
+
 type alias BPrjProjectStats =
     { views : Int
     , appreciations : Int
