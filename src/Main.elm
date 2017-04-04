@@ -1,9 +1,10 @@
 module Main exposing (..)
 
 import App exposing (..)
-import Html exposing (programWithFlags)
+import Navigation exposing (Location, programWithFlags)
 
 
-main : Program String Model Msg
+main : Program Never Model Msg
 main =
-    programWithFlags { view = view, init = init, update = update, subscriptions = subscriptions }
+    Navigation.program HandleLocationChange
+        { init = init, view = view, update = update, subscriptions = subscriptions }

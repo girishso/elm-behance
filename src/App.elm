@@ -7,6 +7,8 @@ import RemoteData exposing (..)
 import Http exposing (..)
 import Time.DateTime as DateTime exposing (DateTime, dateTime, fromTimestamp)
 import Dict
+import Navigation exposing (Location)
+import UrlParser exposing (..)
 
 
 type alias ProjectPage =
@@ -20,17 +22,28 @@ type Data
 
 type alias Model =
     { data : Data
+    , route : Route
     }
 
 
-init : String -> ( Model, Cmd Msg )
-init path =
-    ( { data = CurrentProject ({ current_project = initialBPrj, comments = { comments = [] } }) }, Cmd.batch [ fetchProject, fetchComments ] )
+init : Location -> ( Model, Cmd Msg )
+init location =
+    let
+        currentRoute =
+            parseLocation location
+
+        model =
+            { data = CurrentProject (initCurrentProject)
+            , route = ProjectRoute "50911821"
+            }
+    in
+        ( model, (commandForRoute currentRoute) )
 
 
 type Msg
     = HandleProject (WebData Behance)
     | HandleComments (WebData Comments)
+    | HandleLocationChange Location
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -44,7 +57,7 @@ update msg model =
                             { current_project = response, comments = pp.comments }
 
                         _ ->
-                            { current_project = initialBPrj, comments = { comments = [] } }
+                            initCurrentProject
             in
                 ( { model | data = CurrentProject newModel }, Cmd.none )
 
@@ -65,6 +78,13 @@ update msg model =
 
         HandleComments _ ->
             ( model, Cmd.none )
+
+        HandleLocationChange location ->
+            let
+                newRoute =
+                    parseLocation location
+            in
+                ( { model | route = newRoute }, (commandForRoute newRoute) )
 
 
 view : Model -> Html Msg
@@ -240,15 +260,57 @@ format_date dt =
         |> DateTime.toISO8601
 
 
-fetchComments : Cmd Msg
-fetchComments =
-    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeComments
+fetchComments : String -> Cmd Msg
+fetchComments id =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeComments
         |> RemoteData.sendRequest
         |> Cmd.map HandleComments
 
 
-fetchProject : Cmd Msg
-fetchProject =
-    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeBPrj
+fetchProject : String -> Cmd Msg
+fetchProject id =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeBPrj
         |> RemoteData.sendRequest
         |> Cmd.map HandleProject
+
+
+type Route
+    = ProjectsRoute
+    | ProjectRoute String
+    | NotFoundRoute
+
+
+matchers : Parser (Route -> a) a
+matchers =
+    oneOf
+        [ UrlParser.map ProjectsRoute top
+        , UrlParser.map ProjectRoute (UrlParser.s "projects" </> string)
+        , UrlParser.map ProjectsRoute (UrlParser.s "projects")
+        ]
+
+
+parseLocation : Location -> Route
+parseLocation location =
+    case (parseHash matchers location) of
+        Just route ->
+            route
+
+        Nothing ->
+            NotFoundRoute
+
+
+commandForRoute : Route -> Cmd Msg
+commandForRoute route =
+    case route of
+        ProjectRoute id ->
+            Cmd.batch [ fetchProject id, fetchComments id ]
+
+        ProjectsRoute ->
+            Cmd.none
+
+        NotFoundRoute ->
+            Cmd.none
+
+
+initCurrentProject =
+    { current_project = initialBPrj, comments = { comments = [] } }
