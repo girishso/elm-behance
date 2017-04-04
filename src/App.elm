@@ -10,11 +10,11 @@ import Dict
 
 
 type alias ProjectPage =
-    { current_project : Behance, commets : List Comment }
+    { current_project : Behance, comments : Comments }
 
 
 type Data
-    = CurrentProject Behance
+    = CurrentProject ProjectPage
     | ProjectsList (List Behance)
 
 
@@ -25,40 +25,43 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init path =
-    ( { data = CurrentProject (initialBPrj) }, Cmd.batch [ fetchProject, fetchComments ] )
+    ( { data = CurrentProject ({ current_project = initialBPrj, comments = { comments = [] } }) }, Cmd.batch [ fetchProject, fetchComments ] )
 
 
 type Msg
-    = OnFetchProject (WebData Behance)
+    = HandleProject (WebData Behance)
     | HandleComments (WebData Comments)
-
-
-fetchComments : Cmd Msg
-fetchComments =
-    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeComments
-        |> RemoteData.sendRequest
-        |> Cmd.map HandleComments
-
-
-fetchProject : Cmd Msg
-fetchProject =
-    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeBPrj
-        |> RemoteData.sendRequest
-        |> Cmd.map OnFetchProject
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case Debug.log "updatE" msg of
-        OnFetchProject (Success response) ->
-            ( { model | data = CurrentProject response }, Cmd.none )
+        HandleProject (Success response) ->
+            let
+                newModel =
+                    case model.data of
+                        CurrentProject pp ->
+                            { current_project = response, comments = pp.comments }
 
-        OnFetchProject _ ->
+                        _ ->
+                            { current_project = initialBPrj, comments = { comments = [] } }
+            in
+                ( { model | data = CurrentProject newModel }, Cmd.none )
+
+        HandleProject _ ->
             ( model, Cmd.none )
 
         HandleComments (Success response) ->
-            -- ({model | data =})
-            ( model, Cmd.none )
+            let
+                newModel =
+                    case model.data of
+                        CurrentProject pp ->
+                            { current_project = pp.current_project, comments = response }
+
+                        _ ->
+                            { current_project = initialBPrj, comments = { comments = [] } }
+            in
+                ( { model | data = CurrentProject newModel }, Cmd.none )
 
         HandleComments _ ->
             ( model, Cmd.none )
@@ -71,9 +74,9 @@ view model =
             div [ class "ui middle aligned stackable grid container" ]
                 [ div [ class "row main" ]
                     [ div [ class "eleven wide column" ]
-                        (render_modules prj.project.modules)
+                        (render_modules prj.current_project.project.modules)
                     , div [ class "five wide column sb" ]
-                        (side_bar prj)
+                        (side_bar prj.current_project)
                     ]
                 , div [ class "row" ]
                     [ h4 [ class "ui horizontal divider header" ]
@@ -82,7 +85,7 @@ view model =
                         ]
                     ]
                 , div [ class "row" ]
-                    (comments model)
+                    (comments prj.comments)
                 ]
 
         ProjectsList prj_list ->
@@ -125,61 +128,55 @@ render_modules modules =
         ]
 
 
-comments : Model -> List (Html Msg)
-comments model =
-    [ div [ class "column" ]
-        [ div [ class "ui segment" ]
-            [ h2 []
-                [ text "Comments (8)" ]
-            , div [ class "ui comments" ]
-                [ div [ class "comment" ]
-                    [ a [ class "avatar", rel "noreferrer" ]
-                        [ img [ src "/images/avatar/small/joe.jpg" ]
-                            []
-                        ]
-                    , div [ class "content" ]
-                        [ a [ class "author", rel "noreferrer" ]
-                            [ text "Joe Henderson" ]
-                        , div [ class "metadata" ]
-                            [ div [ class "date" ]
-                                [ text "1 day ago" ]
+comments : Comments -> List (Html Msg)
+comments comments =
+    let
+        n_comments =
+            \comments -> toString <| List.length comments
+
+        render_comment =
+            \comment ->
+                let
+                    commenter_img =
+                        \images ->
+                            case Dict.get "100" images of
+                                Just a ->
+                                    a
+
+                                Nothing ->
+                                    ""
+                in
+                    div [ class "comment" ]
+                        [ a [ class "avatar", rel "noreferrer" ]
+                            [ img [ src (commenter_img comment.user.images) ]
+                                []
                             ]
-                        , div [ class "text" ]
-                            [ p []
-                                [ text "The hours, minutes and seconds stand as visible reminders that your effort put them all there. " ]
-                            , p []
-                                [ text "Preserve until your next run, when the watch lets you see how Impermanent your efforts are." ]
-                            ]
-                        , div [ class "actions" ]
-                            [ a [ class "reply", rel "noreferrer" ]
-                                [ text "Reply" ]
-                            ]
-                        ]
-                    ]
-                , div [ class "comment" ]
-                    [ a [ class "avatar", rel "noreferrer" ]
-                        [ img [ src "/images/avatar/small/christian.jpg" ]
-                            []
-                        ]
-                    , div [ class "content" ]
-                        [ a [ class "author", rel "noreferrer" ]
-                            [ text "Christian Rocha" ]
-                        , div [ class "metadata" ]
-                            [ div [ class "date" ]
-                                [ text "2 days ago" ]
-                            ]
-                        , div [ class "text" ]
-                            [ text "I re-tweeted this.              " ]
-                        , div [ class "actions" ]
-                            [ a [ class "reply", rel "noreferrer" ]
-                                [ text "Reply" ]
+                        , div [ class "content" ]
+                            [ a [ class "author", rel "noreferrer" ]
+                                [ text comment.user.display_name ]
+                            , div [ class "metadata" ]
+                                [ div [ class "date" ]
+                                    [ text (format_date comment.created_on) ]
+                                ]
+                            , div [ class "text" ]
+                                [ p [] [ text comment.comment ]
+                                ]
+                            , div [ class "actions" ]
+                                [ a [ class "reply", rel "noreferrer" ]
+                                    [ text "" ]
+                                ]
                             ]
                         ]
-                    ]
+    in
+        [ div [ class "column" ]
+            [ div [ class "ui segment" ]
+                [ h2 []
+                    [ text <| "Comments (" ++ n_comments comments.comments ++ ")" ]
+                , div [ class "ui comments" ]
+                    (List.map render_comment comments.comments)
                 ]
             ]
         ]
-    ]
 
 
 side_bar : Behance -> List (Html Msg)
@@ -241,3 +238,17 @@ format_date : Int -> String
 format_date dt =
     fromTimestamp (toFloat dt * 1000)
         |> DateTime.toISO8601
+
+
+fetchComments : Cmd Msg
+fetchComments =
+    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeComments
+        |> RemoteData.sendRequest
+        |> Cmd.map HandleComments
+
+
+fetchProject : Cmd Msg
+fetchProject =
+    Http.get "http://cuberoot.in:8080/http://www.behance.net/v2/projects/50911821?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll" decodeBPrj
+        |> RemoteData.sendRequest
+        |> Cmd.map HandleProject
