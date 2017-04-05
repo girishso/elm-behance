@@ -28,6 +28,11 @@ type alias Comments =
     }
 
 
+type alias Projects =
+    { projects : List Project
+    }
+
+
 type alias CommentUser =
     { display_name : String
     , images : Dict.Dict String String
@@ -38,6 +43,12 @@ decodeComments : D.Decoder Comments
 decodeComments =
     decode Comments
         |> required "comments" (D.list decodeComment)
+
+
+decodeProjects : D.Decoder Projects
+decodeProjects =
+    decode Projects
+        |> required "projects" (D.list decodeBPrjProject)
 
 
 decodeComment : D.Decoder Comment
@@ -151,6 +162,11 @@ decodeBPrj =
         |> required "http_code" (D.int)
 
 
+decodeBPrjs : D.Decoder (List Project)
+decodeBPrjs =
+    D.list decodeBPrjProject
+
+
 decodeBPrjProjectStats : D.Decoder BPrjProjectStats
 decodeBPrjProjectStats =
     decode BPrjProjectStats
@@ -175,14 +191,14 @@ decodeBPrjProject =
         |> required "mature_access" (D.string)
         |> required "owners" (D.list decodeBPrjProjectOwner)
         |> required "conceived_on" (D.int)
-        |> required "canvas_width" (D.int)
-        |> required "tags" (D.list D.string)
-        |> required "description" (D.string)
-        |> required "editor_version" (D.int)
-        |> required "allow_comments" (D.int)
-        |> required "modules" (D.list decodeBPrjProjectModule)
-        |> required "short_url" (D.string)
-        |> required "creator_id" (D.int)
+        |> optional "canvas_width" (D.int) 0
+        |> optional "tags" (D.list D.string) []
+        |> optional "description" (D.string) ""
+        |> optional "editor_version" (D.int) 0
+        |> optional "allow_comments" (D.int) 0
+        |> optional "modules" (D.list decodeBPrjProjectModule) []
+        |> optional "short_url" (D.string) ""
+        |> optional "creator_id" (D.int) 0
 
 
 decodeBPrjProjectModule : D.Decoder ProjectModule

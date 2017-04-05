@@ -17,7 +17,7 @@ type alias ProjectPage =
 
 type Data
     = CurrentProject ProjectPage
-    | ProjectsList (List Behance)
+    | ProjectsList (List Project)
 
 
 type alias Model =
@@ -33,9 +33,19 @@ init location =
             parseLocation location
 
         model =
-            { data = CurrentProject (initCurrentProject)
-            , route = ProjectRoute "50911821"
-            }
+            case currentRoute of
+                ProjectsRoute ->
+                    { data = ProjectsList []
+                    , route = currentRoute
+                    }
+
+                ProjectRoute id ->
+                    { data = CurrentProject (initCurrentProject), route = currentRoute }
+
+                NotFoundRoute ->
+                    { data = ProjectsList []
+                    , route = ProjectsRoute
+                    }
     in
         ( model, (commandForRoute currentRoute) )
 
@@ -43,16 +53,17 @@ init location =
 type Msg
     = HandleProject (WebData Behance)
     | HandleComments (WebData Comments)
+    | HandleProjectsList (WebData Projects)
     | HandleLocationChange Location
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "updatE" msg of
+    case msg of
         HandleProject (Success response) ->
             let
                 newModel =
-                    case model.data of
+                    case Debug.log "HandleProject" model.data of
                         CurrentProject pp ->
                             { current_project = response, comments = pp.comments }
 
@@ -86,6 +97,12 @@ update msg model =
             in
                 ( { model | route = newRoute }, (commandForRoute newRoute) )
 
+        HandleProjectsList (Success response) ->
+            ( { model | data = ProjectsList response.projects }, Cmd.none )
+
+        HandleProjectsList _ ->
+            ( model, Cmd.none )
+
 
 view : Model -> Html Msg
 view model =
@@ -100,7 +117,7 @@ view model =
                     ]
                 , div [ class "row" ]
                     [ h4 [ class "ui horizontal divider header" ]
-                        [ i [ class "thumb circular up icon" ]
+                        [ i [ class "thumbs circular up icon" ]
                             []
                         ]
                     ]
@@ -109,7 +126,54 @@ view model =
                 ]
 
         ProjectsList prj_list ->
-            h1 [] [ text "prj_list" ]
+            div [ class "ui middle aligned stackable grid container" ]
+                [ div [ class "row main" ]
+                    (render_projects prj_list)
+                ]
+
+
+render_projects : List Project -> List (Html msg)
+render_projects projects =
+    let
+        cover_img =
+            \images ->
+                case Dict.get "230" images of
+                    Just a ->
+                        a
+
+                    Nothing ->
+                        ""
+
+        render_a_project =
+            \project ->
+                div [ class "card" ]
+                    [ div [ class "image" ]
+                        [ img [ alt "", src <| cover_img <| project.covers ] [] ]
+                    , div [ class "content" ]
+                        [ div [ class "header" ]
+                            [ a
+                                [ href <| "/#/projects/" ++ (toString project.id) ]
+                                [ text project.name ]
+                            ]
+                        , div [ class "meta" ]
+                            [ span [ class "date" ]
+                                [ text "by roject.owners[0].display_name " ]
+                            ]
+                        , div [ class "description" ]
+                            []
+                        ]
+                    , div [ class "extra content" ]
+                        [ span [ class "right floated" ]
+                            [ text "project.fields[0]         " ]
+                        , span []
+                            [ i [ class "thumbs up icon" ]
+                                []
+                            , text "project.stats.appreciations        "
+                            ]
+                        ]
+                    ]
+    in
+        List.map render_a_project projects
 
 
 subscriptions : Model -> Sub Msg
@@ -274,6 +338,13 @@ fetchProject id =
         |> Cmd.map HandleProject
 
 
+fetchProjects : Cmd Msg
+fetchProjects =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeProjects
+        |> RemoteData.sendRequest
+        |> Cmd.map HandleProjectsList
+
+
 type Route
     = ProjectsRoute
     | ProjectRoute String
@@ -306,7 +377,7 @@ commandForRoute route =
             Cmd.batch [ fetchProject id, fetchComments id ]
 
         ProjectsRoute ->
-            Cmd.none
+            fetchProjects
 
         NotFoundRoute ->
             Cmd.none
