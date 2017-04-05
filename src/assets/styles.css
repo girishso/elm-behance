@@ -27,7 +27,8 @@ ul#fields  li + li:before {
 }
 
 .home-main {
-  margin-top: 4em !important;
+  /*margin-top: 4em !important;*/
+  /*margin-top: -1em !important;*/
 }
 
 .card {

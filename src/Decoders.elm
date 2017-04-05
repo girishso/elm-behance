@@ -101,6 +101,7 @@ initial_BPrjProject =
     , editor_version = 0
     , allow_comments = 0
     , modules = []
+    , stats = { appreciations = 0, comments = 0, views = 0 }
     , short_url = ""
     , creator_id = 0
     }
@@ -120,7 +121,7 @@ type alias Project =
     , mature_access : String
     , owners :
         List BPrjProjectOwner
-        -- , stats : bprj_project_stats
+    , stats : BPrjProjectStats
     , conceived_on : Int
     , canvas_width : Int
     , tags : List String
@@ -190,6 +191,7 @@ decodeBPrjProject =
         |> required "mature_content" (D.int)
         |> required "mature_access" (D.string)
         |> required "owners" (D.list decodeBPrjProjectOwner)
+        |> required "stats" (decodeBPrjProjectStats)
         |> required "conceived_on" (D.int)
         |> optional "canvas_width" (D.int) 0
         |> optional "tags" (D.list D.string) []

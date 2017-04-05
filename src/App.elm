@@ -172,7 +172,7 @@ view model =
                     ]
                 , div [ class "row" ]
                     [ h4 [ class "ui horizontal divider header" ]
-                        [ i [ class "thumbs circular up icon" ]
+                        [ i [ class "comments circular icon" ]
                             []
                         ]
                     ]
@@ -183,50 +183,68 @@ view model =
         ProjectsList prj_list ->
             div [ class "ui middle aligned stackable grid container" ]
                 [ div [ class "row main" ]
-                    (render_projects prj_list)
+                    [ div [ class "ui container grid home-main" ]
+                        [ div [ class "ui link cards" ] (render_projects prj_list) ]
+                    ]
                 ]
 
 
 render_projects : List Project -> List (Html msg)
 render_projects projects =
     let
-        cover_img =
-            \images ->
-                case Dict.get "230" images of
-                    Just a ->
-                        a
-
-                    Nothing ->
-                        ""
-
         render_a_project =
             \project ->
-                div [ class "card" ]
-                    [ div [ class "image" ]
-                        [ img [ alt "", src <| cover_img <| project.covers ] [] ]
-                    , div [ class "content" ]
-                        [ div [ class "header" ]
-                            [ a
-                                [ href <| "/#/projects/" ++ (toString project.id) ]
-                                [ text project.name ]
-                            ]
-                        , div [ class "meta" ]
-                            [ span [ class "date" ]
-                                [ text "by roject.owners[0].display_name " ]
-                            ]
-                        , div [ class "description" ]
-                            []
-                        ]
-                    , div [ class "extra content" ]
-                        [ span [ class "right floated" ]
-                            [ text "project.fields[0]         " ]
-                        , span []
-                            [ i [ class "thumbs up icon" ]
+                let
+                    cover_img =
+                        case Dict.get "230" project.covers of
+                            Just a ->
+                                a
+
+                            Nothing ->
+                                ""
+
+                    owner =
+                        case List.head project.owners of
+                            Just a ->
+                                a
+
+                            Nothing ->
+                                { location = "", display_name = "", images = Dict.empty }
+
+                    field =
+                        case List.head project.fields of
+                            Just a ->
+                                a
+
+                            Nothing ->
+                                ""
+                in
+                    div [ class "card" ]
+                        [ div [ class "image" ]
+                            [ img [ alt "", src <| cover_img ] [] ]
+                        , div [ class "content" ]
+                            [ div [ class "header" ]
+                                [ a
+                                    [ href <| "/#/projects/" ++ (toString project.id) ]
+                                    [ text project.name ]
+                                ]
+                            , div [ class "meta" ]
+                                [ span [ class "date" ]
+                                    [ text <| "by " ++ owner.display_name ]
+                                ]
+                            , div [ class "description" ]
                                 []
-                            , text "project.stats.appreciations        "
+                            ]
+                        , div [ class "extra content" ]
+                            [ span [ class "right floated" ]
+                                [ text field ]
+                            , span []
+                                [ i [ class "thumbs up icon" ]
+                                    []
+                                , text <| toString project.stats.appreciations
+                                ]
                             ]
                         ]
-                    ]
     in
         List.map render_a_project projects
 
@@ -263,7 +281,7 @@ render_modules modules =
                     )
     in
         [ div [ class "ui segment" ]
-            (modules_html)
+            modules_html
         ]
 
 
