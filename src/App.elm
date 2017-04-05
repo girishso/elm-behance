@@ -16,7 +16,7 @@ type alias ProjectPage =
 
 
 type Data
-    = CurrentProject ProjectPage
+    = CurrentProject { current_project : Behance, comments : Comments }
     | ProjectsList (List Project)
 
 
@@ -61,31 +61,23 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         HandleProject (Success response) ->
-            let
-                newModel =
-                    case Debug.log "HandleProject" model.data of
-                        CurrentProject pp ->
-                            { current_project = response, comments = pp.comments }
+            case model.data of
+                CurrentProject pp ->
+                    ( { model | data = CurrentProject { pp | current_project = response } }, Cmd.none )
 
-                        _ ->
-                            initCurrentProject
-            in
-                ( { model | data = CurrentProject newModel }, Cmd.none )
+                _ ->
+                    ( { model | data = CurrentProject { current_project = response, comments = { comments = [] } } }, Cmd.none )
 
         HandleProject _ ->
             ( model, Cmd.none )
 
         HandleComments (Success response) ->
-            let
-                newModel =
-                    case model.data of
-                        CurrentProject pp ->
-                            { current_project = pp.current_project, comments = response }
+            case model.data of
+                CurrentProject pp ->
+                    ( { model | data = CurrentProject { pp | comments = response } }, Cmd.none )
 
-                        _ ->
-                            { current_project = initialBPrj, comments = { comments = [] } }
-            in
-                ( { model | data = CurrentProject newModel }, Cmd.none )
+                _ ->
+                    ( { model | data = CurrentProject { current_project = initialBPrj, comments = response } }, Cmd.none )
 
         HandleComments _ ->
             ( model, Cmd.none )
@@ -102,6 +94,69 @@ update msg model =
 
         HandleProjectsList _ ->
             ( model, Cmd.none )
+
+
+fetchComments : String -> Cmd Msg
+fetchComments id =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeComments
+        |> RemoteData.sendRequest
+        |> Cmd.map HandleComments
+
+
+fetchProject : String -> Cmd Msg
+fetchProject id =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeBPrj
+        |> RemoteData.sendRequest
+        |> Cmd.map HandleProject
+
+
+fetchProjects : Cmd Msg
+fetchProjects =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeProjects
+        |> RemoteData.sendRequest
+        |> Cmd.map HandleProjectsList
+
+
+type Route
+    = ProjectsRoute
+    | ProjectRoute String
+    | NotFoundRoute
+
+
+matchers : Parser (Route -> a) a
+matchers =
+    oneOf
+        [ UrlParser.map ProjectsRoute top
+        , UrlParser.map ProjectRoute (UrlParser.s "projects" </> string)
+        , UrlParser.map ProjectsRoute (UrlParser.s "projects")
+        ]
+
+
+parseLocation : Location -> Route
+parseLocation location =
+    case (parseHash matchers location) of
+        Just route ->
+            route
+
+        Nothing ->
+            NotFoundRoute
+
+
+commandForRoute : Route -> Cmd Msg
+commandForRoute route =
+    case Debug.log "commandForRoute" route of
+        ProjectRoute id ->
+            Cmd.batch [ fetchProject id, fetchComments id ]
+
+        ProjectsRoute ->
+            fetchProjects
+
+        NotFoundRoute ->
+            Cmd.none
+
+
+initCurrentProject =
+    { current_project = initialBPrj, comments = { comments = [] } }
 
 
 view : Model -> Html Msg
@@ -322,66 +377,3 @@ format_date : Int -> String
 format_date dt =
     fromTimestamp (toFloat dt * 1000)
         |> DateTime.toISO8601
-
-
-fetchComments : String -> Cmd Msg
-fetchComments id =
-    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeComments
-        |> RemoteData.sendRequest
-        |> Cmd.map HandleComments
-
-
-fetchProject : String -> Cmd Msg
-fetchProject id =
-    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeBPrj
-        |> RemoteData.sendRequest
-        |> Cmd.map HandleProject
-
-
-fetchProjects : Cmd Msg
-fetchProjects =
-    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeProjects
-        |> RemoteData.sendRequest
-        |> Cmd.map HandleProjectsList
-
-
-type Route
-    = ProjectsRoute
-    | ProjectRoute String
-    | NotFoundRoute
-
-
-matchers : Parser (Route -> a) a
-matchers =
-    oneOf
-        [ UrlParser.map ProjectsRoute top
-        , UrlParser.map ProjectRoute (UrlParser.s "projects" </> string)
-        , UrlParser.map ProjectsRoute (UrlParser.s "projects")
-        ]
-
-
-parseLocation : Location -> Route
-parseLocation location =
-    case (parseHash matchers location) of
-        Just route ->
-            route
-
-        Nothing ->
-            NotFoundRoute
-
-
-commandForRoute : Route -> Cmd Msg
-commandForRoute route =
-    case route of
-        ProjectRoute id ->
-            Cmd.batch [ fetchProject id, fetchComments id ]
-
-        ProjectsRoute ->
-            fetchProjects
-
-        NotFoundRoute ->
-            Cmd.none
-
-
-initCurrentProject =
-    { current_project = initialBPrj, comments = { comments = [] } }
