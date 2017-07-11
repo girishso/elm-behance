@@ -3,14 +3,14 @@ module App exposing (..)
 import Html exposing (..)
 import Navigation exposing (Location)
 import UrlParser exposing (..)
-import Page.Home as Home
+import Page.Home as HomePage
 import Page.NotFound
-import Page.Project as PProject
+import Page.Project as ProjectPage
 
 
 type Page
-    = Home Home.Model
-    | PProject PProject.Model
+    = HomePage HomePage.Model
+    | ProjectPage ProjectPage.Model
     | NotFoundPage
 
 
@@ -32,10 +32,10 @@ type Route
 
 type Msg
     = HandleLocationChange Location
-    | HomeMsg Home.Msg
-    | HomeLoaded Home.Model
-    | PProjectMsg PProject.Msg
-    | PProjectLoaded PProject.Model
+    | HomeMsg HomePage.Msg
+    | HomeLoaded HomePage.Model
+    | PProjectMsg ProjectPage.Msg
+    | PProjectLoaded ProjectPage.Model
 
 
 init : Location -> ( Model, Cmd Msg )
@@ -48,9 +48,9 @@ init location =
             ProjectsRoute ->
                 let
                     ( model, fx ) =
-                        Home.init
+                        HomePage.init
                 in
-                    ( { pageState = Loaded (Home model)
+                    ( { pageState = Loaded (HomePage model)
                       , route = currentRoute
                       }
                     , Cmd.map HomeMsg fx
@@ -59,9 +59,9 @@ init location =
             ProjectRoute id ->
                 let
                     ( model, fx ) =
-                        PProject.init id
+                        ProjectPage.init id
                 in
-                    ( { pageState = Loaded (PProject model)
+                    ( { pageState = Loaded (ProjectPage model)
                       , route = ProjectRoute id
                       }
                     , Cmd.map PProjectMsg fx
@@ -85,12 +85,12 @@ view model =
 viewPage : Page -> Html Msg
 viewPage page =
     case page of
-        Home subModel ->
-            Home.view subModel
+        HomePage subModel ->
+            HomePage.view subModel
                 |> Html.map HomeMsg
 
-        PProject subModel ->
-            PProject.view subModel
+        ProjectPage subModel ->
+            ProjectPage.view subModel
                 |> Html.map PProjectMsg
 
         NotFoundPage ->
@@ -126,16 +126,16 @@ updatePage page msg model =
     in
         case ( msg, page ) of
             ( HomeLoaded subModel, _ ) ->
-                { model | pageState = Loaded (Home subModel) } => Cmd.none
+                { model | pageState = Loaded (HomePage subModel) } => Cmd.none
 
-            ( HomeMsg subMsg, Home subModel ) ->
-                toPage Home HomeMsg (Home.update) subMsg subModel
+            ( HomeMsg subMsg, HomePage subModel ) ->
+                toPage HomePage HomeMsg (HomePage.update) subMsg subModel
 
             ( PProjectLoaded subModel, _ ) ->
-                { model | pageState = Loaded (PProject subModel) } => Cmd.none
+                { model | pageState = Loaded (ProjectPage subModel) } => Cmd.none
 
-            ( PProjectMsg subMsg, PProject subModel ) ->
-                toPage PProject PProjectMsg (PProject.update) subMsg subModel
+            ( PProjectMsg subMsg, ProjectPage subModel ) ->
+                toPage ProjectPage PProjectMsg (ProjectPage.update) subMsg subModel
 
             ( HandleLocationChange location, _ ) ->
                 init location
