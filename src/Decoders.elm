@@ -33,6 +33,48 @@ type alias Projects =
     }
 
 
+type alias Project =
+    { id : Int
+    , name : String
+    , published_on : Int
+    , created_on : Int
+    , modified_on : Int
+    , url : String
+    , privacy : String
+    , fields : List String
+    , covers : Dict.Dict String String
+    , mature_content : Int
+    , mature_access : String
+    , owners :
+        List BPrjProjectOwner
+    , stats : BPrjProjectStats
+    , conceived_on : Int
+    , canvas_width : Int
+    , tags : List String
+    , description : String
+    , editor_version : Int
+    , allow_comments :
+        Int
+    , modules : List ProjectModule
+    , short_url :
+        String
+
+    -- , copyright : BPrjProjectCopyright
+    -- , tools :
+    --     List String
+    -- , features : BPrjProjectFeatures
+    -- , styles : BPrjProjectStyles
+    , creator_id : Int
+    }
+
+
+type alias BPrjProjectOwner =
+    { location : String
+    , images : Dict.Dict String String
+    , display_name : String
+    }
+
+
 type alias CommentUser =
     { display_name : String
     , images : Dict.Dict String String
@@ -104,47 +146,6 @@ initial_BPrjProject =
     , stats = { appreciations = 0, comments = 0, views = 0 }
     , short_url = ""
     , creator_id = 0
-    }
-
-
-type alias Project =
-    { id : Int
-    , name : String
-    , published_on : Int
-    , created_on : Int
-    , modified_on : Int
-    , url : String
-    , privacy : String
-    , fields : List String
-    , covers : Dict.Dict String String
-    , mature_content : Int
-    , mature_access : String
-    , owners :
-        List BPrjProjectOwner
-    , stats : BPrjProjectStats
-    , conceived_on : Int
-    , canvas_width : Int
-    , tags : List String
-    , description : String
-    , editor_version : Int
-    , allow_comments :
-        Int
-    , modules : List ProjectModule
-    , short_url :
-        String
-        -- , copyright : BPrjProjectCopyright
-        -- , tools :
-        --     List String
-        -- , features : BPrjProjectFeatures
-        -- , styles : BPrjProjectStyles
-    , creator_id : Int
-    }
-
-
-type alias BPrjProjectOwner =
-    { location : String
-    , images : Dict.Dict String String
-    , display_name : String
     }
 
 
