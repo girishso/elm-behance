@@ -40,14 +40,14 @@ update msg model =
 
 fetchComments : String -> Cmd Msg
 fetchComments id =
-    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeComments
+    Http.get (comments_path id) decodeComments
         |> RemoteData.sendRequest
         |> Cmd.map CommentsLoaded
 
 
 fetchProject : String -> Cmd Msg
 fetchProject id =
-    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeBPrj
+    Http.get (project_path id) decodeBPrj
         |> RemoteData.sendRequest
         |> Cmd.map ProjectLoaded
 
@@ -58,22 +58,28 @@ view model =
         prj =
             model.project
     in
-        div [ class "ui middle aligned stackable grid container" ]
-            [ div [ class "row main" ]
-                [ div [ class "eleven wide column" ]
-                    (render_modules prj.project.modules)
-                , div [ class "five wide column sb" ]
-                    (side_bar prj)
+        if prj.http_code == 0 then
+            div [ class "ui middle aligned stackable grid container" ]
+                [ div [ class "row main" ]
+                    [ div [ class "ui active inverted dimmer" ] [ div [ class "ui large loader" ] [] ] ]
                 ]
-            , div [ class "row" ]
-                [ h4 [ class "ui horizontal divider header" ]
-                    [ i [ class "comments circular icon" ]
-                        []
+        else
+            div [ class "ui middle aligned stackable grid container" ]
+                [ div [ class "row main" ]
+                    [ div [ class "eleven wide column" ]
+                        (render_modules prj.project.modules)
+                    , div [ class "five wide column sb" ]
+                        (side_bar prj)
                     ]
+                , div [ class "row" ]
+                    [ h4 [ class "ui horizontal divider header" ]
+                        [ i [ class "comments circular icon" ]
+                            []
+                        ]
+                    ]
+                , div [ class "row" ]
+                    (comments model.comments.comments)
                 ]
-            , div [ class "row" ]
-                (comments model.comments.comments)
-            ]
 
 
 render_modules : List ProjectModule -> List (Html Msg)

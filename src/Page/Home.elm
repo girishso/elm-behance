@@ -33,7 +33,7 @@ update msg model =
 
 fetchProjects : Cmd Msg
 fetchProjects =
-    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeProjects
+    Http.get (projects_path) decodeProjects
         |> RemoteData.sendRequest
         |> Cmd.map HandleProjectsList
 
@@ -111,6 +111,6 @@ render_projects projects =
                         ]
     in
         if List.length projects == 0 then
-            [ h3 [] [ text "Loading..." ] ]
+            [ div [ class "ui active inverted dimmer" ] [ div [ class "ui large loader" ] [] ] ]
         else
             List.map render_a_project projects

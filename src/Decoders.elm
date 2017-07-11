@@ -81,6 +81,31 @@ type alias CommentUser =
     }
 
 
+api_root : String
+api_root =
+    "http://cuberoot.in:8080/http://www.behance.net/v2/projects/"
+
+
+client_id : String
+client_id =
+    "?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll"
+
+
+projects_path : String
+projects_path =
+    api_root ++ client_id
+
+
+project_path : String -> String
+project_path id =
+    api_root ++ id ++ client_id
+
+
+comments_path : String -> String
+comments_path id =
+    api_root ++ id ++ "/comments" ++ client_id
+
+
 decodeComments : D.Decoder Comments
 decodeComments =
     decode Comments
