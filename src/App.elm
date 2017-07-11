@@ -4,12 +4,14 @@ import Html exposing (..)
 import Navigation exposing (Location)
 import UrlParser exposing (..)
 import Page.Home as Home
+import Page.NotFound
 import Page.Project as PProject
 
 
 type Page
     = Home Home.Model
     | PProject PProject.Model
+    | NotFoundPage
 
 
 type PageState
@@ -66,15 +68,11 @@ init location =
                     )
 
             NotFoundRoute ->
-                let
-                    ( model, fx ) =
-                        Home.init
-                in
-                    ( { pageState = Loaded (Home model)
-                      , route = ProjectsRoute
-                      }
-                    , Cmd.map HomeMsg fx
-                    )
+                ( { pageState = Loaded (NotFoundPage)
+                  , route = NotFoundRoute
+                  }
+                , Cmd.none
+                )
 
 
 view : Model -> Html Msg
@@ -94,6 +92,9 @@ viewPage page =
         PProject subModel ->
             PProject.view subModel
                 |> Html.map PProjectMsg
+
+        NotFoundPage ->
+            Page.NotFound.view
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
