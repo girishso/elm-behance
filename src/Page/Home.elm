@@ -64,7 +64,8 @@ view model =
     div [ class "ui middle aligned stackable grid container" ]
         [ div [ class "row main" ]
             [ div [ class "ui container grid home-main" ]
-                [ div [ class "ui link cards" ] (render_projects model.projects) ]
+                [ div [ class "ui link cards" ] (render_projects model.projects)
+                ]
             ]
         ]
 
@@ -126,4 +127,7 @@ render_projects projects =
                             ]
                         ]
     in
-        List.map render_a_project projects
+        if List.length projects == 0 then
+            [ h1 [] [ text "No projects" ] ]
+        else
+            List.map render_a_project projects

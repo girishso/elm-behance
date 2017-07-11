@@ -1,23 +1,10 @@
 module App exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Decoders exposing (..)
-import RemoteData exposing (..)
-import Http exposing (..)
-
-
--- import Time.DateTime as DateTime exposing (DateTime, dateTime, fromTimestamp)
--- import Dict
-
 import Navigation exposing (Location)
 import UrlParser exposing (..)
 import Page.Home as Home
 import Page.Project as PProject
-
-
--- type alias ProjectPage =
---     { current_project : Behance, comments : Comments }
 
 
 type Page
@@ -44,7 +31,8 @@ type Route
 type Msg
     = HandleLocationChange Location
     | HomeMsg Home.Msg
-    | PProjectMsg PProject.Msg
+    | HomeLoaded Home.Model
+    | PProjectMsg PProject.Model
 
 
 init : Location -> ( Model, Cmd Msg )
@@ -72,7 +60,7 @@ init location =
                     }
     in
         ( model
-        , Cmd.map (HomeMsg) Home.fetchProjects
+        , Cmd.map HomeMsg Home.fetchProjects
         )
 
 
@@ -81,15 +69,6 @@ view model =
     case model.pageState of
         Loaded page ->
             viewPage page
-
-
-
--- div [ class "ui middle aligned stackable grid container" ]
---     [ div [ class "row main" ]
---         [ div [ class "ui container grid home-main" ]
---             [ div [ class "ui link cards" ] [ text "render_projects prj_list" ] ]
---         ]
---     ]
 
 
 viewPage : Page -> Html Msg
@@ -105,10 +84,46 @@ viewPage page =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    updatePage (getPage model.pageState) msg model
+
+
+getPage : PageState -> Page
+getPage pageState =
+    case pageState of
+        Loaded page ->
+            page
+
+
+(=>) : a -> b -> ( a, b )
+(=>) =
+    (,)
+
+
+updatePage : Page -> Msg -> Model -> ( Model, Cmd Msg )
+updatePage page msg model =
+    let
+        toPage toModel toMsg subUpdate subMsg subModel =
+            let
+                ( newModel, newCmd ) =
+                    subUpdate subMsg subModel
+            in
+                ( { model | pageState = Loaded (toModel newModel) }, Cmd.map toMsg newCmd )
+    in
+        case ( msg, page ) of
+            ( HomeLoaded subModel, _ ) ->
+                { model | pageState = Loaded (Home subModel) } => Cmd.none
+
+            ( HomeMsg subMsg, Home subModel ) ->
+                toPage Home HomeMsg (Home.update) subMsg subModel
+
+            _ ->
+                model => Cmd.none
 
 
 
+--
+-- _ ->
+--     ( model, Cmd.none )
 -- case msg of
 --     HandleProject (Success response) ->
 --         case model.data of
