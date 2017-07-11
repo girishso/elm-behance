@@ -1,10 +1,11 @@
-module Page.Project exposing (Model, Msg, init, view)
+module Page.Project exposing (Model, Msg, init, view, update)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Decoders exposing (..)
 import RemoteData exposing (..)
 import Dict
+import Http exposing (..)
 import Time.DateTime as DateTime exposing (DateTime, dateTime, fromTimestamp)
 
 
@@ -17,9 +18,11 @@ type Msg
     | CommentsLoaded (WebData Comments)
 
 
-init : Model
-init =
-    { project = initialBPrj, comments = { comments = [] } }
+init : String -> ( Model, Cmd Msg )
+init id =
+    ( { project = initialBPrj, comments = { comments = [] } }
+    , (Cmd.batch [ fetchProject id, fetchComments id ])
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -33,6 +36,20 @@ update msg model =
 
         _ ->
             ( model, Cmd.none )
+
+
+fetchComments : String -> Cmd Msg
+fetchComments id =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeComments
+        |> RemoteData.sendRequest
+        |> Cmd.map CommentsLoaded
+
+
+fetchProject : String -> Cmd Msg
+fetchProject id =
+    Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeBPrj
+        |> RemoteData.sendRequest
+        |> Cmd.map ProjectLoaded
 
 
 view : Model -> Html Msg

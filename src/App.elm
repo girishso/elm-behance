@@ -32,7 +32,8 @@ type Msg
     = HandleLocationChange Location
     | HomeMsg Home.Msg
     | HomeLoaded Home.Model
-    | PProjectMsg PProject.Model
+    | PProjectMsg PProject.Msg
+    | PProjectLoaded PProject.Model
 
 
 init : Location -> ( Model, Cmd Msg )
@@ -40,28 +41,40 @@ init location =
     let
         currentRoute =
             parseLocation location
-
-        model =
-            case currentRoute of
-                ProjectsRoute ->
-                    { pageState = Loaded (Home Home.init)
-                    , route = currentRoute
-                    }
-
-                ProjectRoute id ->
-                    -- { data = CurrentProject (initCurrentProject), route = currentRoute }
-                    { pageState = Loaded (PProject PProject.init)
-                    , route = ProjectsRoute
-                    }
-
-                NotFoundRoute ->
-                    { pageState = Loaded (Home Home.init)
-                    , route = ProjectsRoute
-                    }
     in
-        ( model
-        , Cmd.map HomeMsg Home.fetchProjects
-        )
+        case currentRoute of
+            ProjectsRoute ->
+                let
+                    ( model, fx ) =
+                        Home.init
+                in
+                    ( { pageState = Loaded (Home model)
+                      , route = currentRoute
+                      }
+                    , Cmd.map HomeMsg fx
+                    )
+
+            ProjectRoute id ->
+                let
+                    ( model, fx ) =
+                        PProject.init id
+                in
+                    ( { pageState = Loaded (PProject model)
+                      , route = ProjectRoute id
+                      }
+                    , Cmd.map PProjectMsg fx
+                    )
+
+            NotFoundRoute ->
+                let
+                    ( model, fx ) =
+                        Home.init
+                in
+                    ( { pageState = Loaded (Home model)
+                      , route = ProjectsRoute
+                      }
+                    , Cmd.map HomeMsg fx
+                    )
 
 
 view : Model -> Html Msg
@@ -79,7 +92,8 @@ viewPage page =
                 |> Html.map HomeMsg
 
         PProject subModel ->
-            h1 [] [ text "mee!!" ]
+            PProject.view subModel
+                |> Html.map PProjectMsg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -116,61 +130,17 @@ updatePage page msg model =
             ( HomeMsg subMsg, Home subModel ) ->
                 toPage Home HomeMsg (Home.update) subMsg subModel
 
+            ( PProjectLoaded subModel, _ ) ->
+                { model | pageState = Loaded (PProject subModel) } => Cmd.none
+
+            ( PProjectMsg subMsg, PProject subModel ) ->
+                toPage PProject PProjectMsg (PProject.update) subMsg subModel
+
+            ( HandleLocationChange location, _ ) ->
+                init location
+
             _ ->
                 model => Cmd.none
-
-
-
---
--- _ ->
---     ( model, Cmd.none )
--- case msg of
---     HandleProject (Success response) ->
---         case model.data of
---             CurrentProject pp ->
---                 ( { model | data = CurrentProject { pp | current_project = response } }, Cmd.none )
---
---             _ ->
---                 ( { model | data = CurrentProject { current_project = response, comments = { comments = [] } } }, Cmd.none )
---
---     HandleProject _ ->
---         ( model, Cmd.none )
---
---     HandleComments (Success response) ->
---         case model.data of
---             CurrentProject pp ->
---                 ( { model | data = CurrentProject { pp | comments = response } }, Cmd.none )
---
---             _ ->
---                 ( { model | data = CurrentProject { current_project = initialBPrj, comments = response } }, Cmd.none )
---
---     HandleComments _ ->
---         ( model, Cmd.none )
---
---     HandleLocationChange location ->
---         let
---             newRoute =
---                 parseLocation location
---         in
---             ( { model | route = newRoute }, (commandForRoute newRoute) )
---
---     HandleProjectsList (Success response) ->
---         ( { model | data =  response.projects }, Cmd.none )
---
---     HandleProjectsList _ ->
---         ( model, Cmd.none )
--- fetchComments : String -> Cmd Msg
--- fetchComments id =
---     Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "/comments?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeComments
---         |> RemoteData.sendRequest
---         |> Cmd.map HandleComments
---
---
--- fetchProject : String -> Cmd Msg
--- fetchProject id =
---     Http.get ("http://cuberoot.in:8080/http://www.behance.net/v2/projects/" ++ id ++ "?client_id=zAfaQfvw7LHUvnj4IRfolHMdh07R2Oll") decodeBPrj
---         |> RemoteData.sendRequest
---         |> Cmd.map HandleProject
 
 
 matchers : Parser (Route -> a) a
@@ -190,27 +160,6 @@ parseLocation location =
 
         Nothing ->
             NotFoundRoute
-
-
-
---
--- commandForRoute : Route -> Cmd Msg
--- commandForRoute route =
---     case Debug.log "commandForRoute" route of
---         ProjectRoute id ->
---             -- Cmd.batch [ fetchProject id, fetchComments id ]
---             Cmd.none
---
---         ProjectsRoute ->
---             let
---                 ( _, newCmd ) =
---                     Home.init_w_msg
---             in
---                 -- Cmd.map (Home.loadProjects) Cmd.none
---                 Home.loadProjects "x"
---
---         NotFoundRoute ->
---             Cmd.none
 
 
 subscriptions : Model -> Sub Msg

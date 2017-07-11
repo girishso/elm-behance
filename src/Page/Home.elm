@@ -1,38 +1,24 @@
-module Page.Home exposing (Model, Msg, init, update, view, fetchProjects, init_w_msg, loadProjects)
+module Page.Home exposing (Model, Msg, init, update, view, fetchProjects)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Decoders exposing (..)
 import RemoteData exposing (..)
 import Http exposing (..)
-
-
--- import Time.DateTime as DateTime exposing (DateTime, dateTime, fromTimestamp)
-
 import Dict
 
 
 type Msg
     = HandleProjectsList (WebData Projects)
-    | LoadProjects
 
 
-init : Model
+init : ( Model, Cmd Msg )
 init =
-    { projects = [] }
-
-
-init_w_msg : ( Model, Cmd Msg )
-init_w_msg =
-    ( init, fetchProjects )
+    ( { projects = [] }, fetchProjects )
 
 
 type alias Model =
     { projects : List Project }
-
-
-loadProjects x =
-    LoadProjects
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -43,9 +29,6 @@ update msg model =
 
         HandleProjectsList _ ->
             ( model, Cmd.none )
-
-        LoadProjects ->
-            ( model, fetchProjects )
 
 
 fetchProjects : Cmd Msg
@@ -128,6 +111,6 @@ render_projects projects =
                         ]
     in
         if List.length projects == 0 then
-            [ h1 [] [ text "No projects" ] ]
+            [ h3 [] [ text "Loading..." ] ]
         else
             List.map render_a_project projects
